@@ -77,19 +77,15 @@ def main():
 
     while(True):
         ret, img = cap.read()
+        img = cv2.flip(img, 1)
         H, W = img.shape[:2]
         keycode = cv2.waitKey(1) & 0xff
         frame = controller.frame()
         tip = None
 
-        if len(frame.hands) > 0:
-            hand1 = frame.hands[0]
-            fingers = hand1.fingers.finger_type(1)
-            if len(fingers):
-                #use first fingertip's position for calibration, so make sure only show one fingertip during calibration
-                tip = fingers[0].tip_position
-        else:
-            pass
+        for hand1 in frame.hands:
+            index_finger_list = hand1.fingers.finger_type(Finger.TYPE_INDEX)
+            index_finger = index_finger_list[0] #since there is only one per hand
 
         if keycode == ord('q'):
             break;
@@ -103,13 +99,14 @@ def main():
                     idx = 0
         cv2.circle(img, (int(test_pos[idx][0]*W), int(test_pos[idx][1]*H)), 10, (0,0,255) if tip else (255,0,0), -1)
 
-        img = cv2.flip(img, 1)
         cv2.imshow('frame', img)
 
     cv2.destroyWindow('frame')
     cap.release()
     controller.clear_policy(Leap.Controller.POLICY_BACKGROUND_FRAMES)
 
+
+    screen_pos2 = [(W-1-x, y) for (x,y) in screen_pos]
 
     retval, cm, dist, rvec, tvec = cv2.calibrateCamera(np.float32([result]), \
                                                    np.float32([screen_pos]), (W, H), cm0.copy(), dist0.copy(),\
